@@ -50,13 +50,6 @@ export function Sidebar({ isStateAdmin = false }) {
             <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/90">Control Center</p>
           </div>
         </div>
-        <div className="px-6 pb-4">
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-3 text-cyan-50 backdrop-blur-sm">
-            <p className="text-xs uppercase tracking-widest text-cyan-100/80">Signed In As</p>
-            <p className="mt-1 text-sm font-semibold">{isStateAdmin ? "State Admin" : "Municipality Operator"}</p>
-            <p className="mt-1 text-xs text-cyan-100/90 truncate">{isStateAdmin ? user?.state_name : user?.district_name}</p>
-          </div>
-        </div>
         <div className="flex-1 flex flex-col overflow-y-auto px-4">
           <nav className="flex-1 py-3 space-y-1.5">
             {filteredNav.map((item) => {
@@ -85,7 +78,12 @@ export function Sidebar({ isStateAdmin = false }) {
             })}
           </nav>
         </div>
-        <div className="flex-shrink-0 p-4 border-t border-white/15">
+        <div className="flex-shrink-0 space-y-3 p-4 border-t border-white/15">
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-3 text-cyan-50 backdrop-blur-sm">
+            <p className="text-xs uppercase tracking-widest text-cyan-100/80">Signed In As</p>
+            <p className="mt-1 text-sm font-semibold">{isStateAdmin ? "State Admin" : "Municipality Operator"}</p>
+            <p className="mt-1 text-xs text-cyan-100/90 truncate">{isStateAdmin ? user?.state_name : user?.district_name}</p>
+          </div>
           <Button
             variant="outline"
             className="w-full justify-start border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white"
@@ -131,9 +129,6 @@ export function MobileSidebar({ isStateAdmin = false }) {
             <BarChart3 className="h-7 w-7" />
             <span className="ml-3 text-xl font-bold">Samadhanam</span>
           </div>
-          <div className="px-6 py-3 text-xs text-cyan-100">
-            {isStateAdmin ? user?.state_name : user?.district_name}
-          </div>
           <nav className="px-3 py-2 space-y-1">
             {filteredNav.map((item) => {
               const isActive = location.pathname === item.href
@@ -155,7 +150,12 @@ export function MobileSidebar({ isStateAdmin = false }) {
               )
             })}
           </nav>
-          <div className="absolute bottom-0 w-full p-4 border-t border-white/20">
+          <div className="absolute bottom-0 w-full space-y-3 p-4 border-t border-white/20">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-3 text-cyan-50">
+              <p className="text-xs uppercase tracking-widest text-cyan-100/80">Signed In As</p>
+              <p className="mt-1 text-sm font-semibold">{isStateAdmin ? "State Admin" : "Municipality Operator"}</p>
+              <p className="mt-1 text-xs text-cyan-100/90 truncate">{isStateAdmin ? user?.state_name : user?.district_name}</p>
+            </div>
             <Button
               variant="outline"
               className="w-full justify-start border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white"
@@ -186,7 +186,6 @@ export function AppLayout({ children, isStateAdmin = false }) {
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-2 rounded-full border border-border/80 bg-white/80 px-3 py-1.5 text-xs text-slate-600">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
               {isStateAdmin ? "State Overview" : "Municipality Desk"}
             </div>
           </div>

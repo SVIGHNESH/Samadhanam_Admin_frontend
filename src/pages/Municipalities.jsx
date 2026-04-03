@@ -297,10 +297,6 @@ export default function MunicipalitiesPage() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">State</span>
-                  <span className="font-medium">{municipality.state_name}</span>
-                </div>
-                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Pending</span>
                   <span className="font-medium text-orange-500">{municipality.pending || 0}</span>
                 </div>
