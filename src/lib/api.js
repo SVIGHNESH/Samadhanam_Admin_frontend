@@ -37,6 +37,7 @@ export const authApi = {
 
 export const dashboardApi = {
   getStats: () => api.get('/admin/state/stats'),
+  getMunicipalStats: () => api.get('/admin/municipal/stats'),
   getAllMunicipalities: () => api.get('/admin/all-municipalities'),
   getEscalatedComplaints: () => api.get('/admin/escalated-complaints'),
   getComplaintsByMunicipality: (municipalityName) => 

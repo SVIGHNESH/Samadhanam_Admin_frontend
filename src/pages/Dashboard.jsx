@@ -79,6 +79,41 @@ function MunicipalStats({ municipalities }) {
   )
 }
 
+function MunicipalRecentComplaints({ municipalityName }) {
+  const { data: complaints, isLoading } = useQuery({
+    queryKey: ['municipal-complaints', municipalityName],
+    queryFn: async () => {
+      const res = await dashboardApi.getComplaintsByMunicipality(municipalityName)
+      return res.data?.complaints || []
+    },
+    staleTime: 30000,
+  })
+
+  if (isLoading) {
+    return <Loader2 className="h-4 w-4 animate-spin" />
+  }
+
+  if (!complaints || complaints.length === 0) {
+    return <p className="text-sm text-muted-foreground">No complaints</p>
+  }
+
+  return (
+    <div className="space-y-3">
+      {complaints.slice(0, 5).map((c) => (
+        <div key={c._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{c.title || 'Complaint'}</p>
+            <p className="text-xs text-muted-foreground">{c.location}</p>
+          </div>
+          <Badge variant={c.status === 'Solved' ? 'success' : 'warning'} className="ml-2">
+            {c.status || 'Pending'}
+          </Badge>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ErrorDisplay({ message, onRetry }) {
   return (
     <Card className="border-red-200 bg-red-50">
@@ -97,15 +132,10 @@ function ErrorDisplay({ message, onRetry }) {
 }
 
 export default function DashboardPage() {
-  const { user, isStateAdmin } = useAuth()
+  const { user, isStateAdmin, isMunicipality } = useAuth()
   
-  const { 
-    data: statsData, 
-    isLoading: statsLoading,
-    isError: statsError,
-    refetch: refetchStats 
-  } = useQuery({
-    queryKey: ['dashboard-stats'],
+  const stateQuery = useQuery({
+    queryKey: ['dashboard-state', user?.state_id],
     queryFn: async () => {
       const [statsRes, municipalitiesRes, escalatedRes] = await Promise.all([
         dashboardApi.getStats().catch((e) => {
@@ -116,12 +146,10 @@ export default function DashboardPage() {
           console.error('Municipalities error:', e);
           return { data: { success: false, districts: [] } };
         }),
-        isStateAdmin 
-          ? dashboardApi.getEscalatedComplaints().catch((e) => {
-              console.error('Escalated error:', e);
-              return { data: { complaints: [] } };
-            })
-          : Promise.resolve({ data: { complaints: [] } })
+        dashboardApi.getEscalatedComplaints().catch((e) => {
+          console.error('Escalated error:', e);
+          return { data: { complaints: [] } };
+        })
       ])
       return {
         stats: statsRes.data,
@@ -129,19 +157,39 @@ export default function DashboardPage() {
         escalated: escalatedRes.data?.complaints || []
       }
     },
+    enabled: isStateAdmin,
     retry: 2,
     staleTime: 30000,
   })
 
-  const stats = statsData?.stats
-  const municipalities = statsData?.municipalities || []
-  const escalated = statsData?.escalated || []
+  const municipalQuery = useQuery({
+    queryKey: ['dashboard-municipal', user?.district_name],
+    queryFn: async () => {
+      const res = await dashboardApi.getMunicipalStats().catch((e) => {
+        console.error('Municipal stats error:', e);
+        return { data: { success: false } };
+      })
+      return res.data
+    },
+    enabled: isMunicipality,
+    retry: 2,
+    staleTime: 30000,
+  })
 
-  const totalComplaints = stats?.total || 0
-  const pendingComplaints = stats?.pending || 0
-  const solvedComplaints = stats?.solved || 0
+  const isLoading = isStateAdmin ? stateQuery.isLoading : municipalQuery.isLoading
+  const isError = isStateAdmin ? stateQuery.isError : municipalQuery.isError
+  const refetch = isStateAdmin ? stateQuery.refetch : municipalQuery.refetch
 
-  if (statsLoading) {
+  const stats = isStateAdmin ? stateQuery.data?.stats : municipalQuery.data?.stats
+  const municipalities = isStateAdmin ? stateQuery.data?.municipalities || [] : []
+  const escalated = isStateAdmin ? stateQuery.data?.escalated || [] : []
+  const recentComplaints = isMunicipality ? municipalQuery.data?.recentComplaints || [] : []
+
+  const totalComplaints = isMunicipality ? (stats?.total || 0) : ((stats?.totalSolved || 0) + (stats?.totalPending || 0))
+  const pendingComplaints = isMunicipality ? (stats?.pending || 0) : (stats?.totalPending || 0)
+  const solvedComplaints = isMunicipality ? (stats?.solved || 0) : (stats?.totalSolved || 0)
+
+  if (isLoading) {
     return (
       <AppLayout isStateAdmin={isStateAdmin}>
         <div className="flex items-center justify-center h-64">
@@ -151,7 +199,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (statsError) {
+  if (isError) {
     return (
       <AppLayout isStateAdmin={isStateAdmin}>
         <div className="mb-8">
@@ -160,7 +208,7 @@ export default function DashboardPage() {
         </div>
         <ErrorDisplay 
           message="Failed to load dashboard statistics" 
-          onRetry={() => refetchStats()} 
+          onRetry={() => refetch()} 
         />
       </AppLayout>
     )
@@ -174,7 +222,11 @@ export default function DashboardPage() {
             ? `State Dashboard - ${user?.state_name || 'Admin'}` : 
             `Municipality Dashboard - ${user?.district_name || 'Operator'}`}
         </h1>
-        <p className="text-muted-foreground">Overview of civic issue management</p>
+        <p className="text-muted-foreground">
+          {isStateAdmin 
+            ? 'Overview of all municipalities in your state' : 
+            'Manage complaints for your municipality'}
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -207,6 +259,29 @@ export default function DashboardPage() {
       </div>
 
       {isStateAdmin && <MunicipalStats municipalities={municipalities} />}
+
+      {isMunicipality && recentComplaints.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Recent Complaints</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentComplaints.slice(0, 5).map((c) => (
+                <div key={c._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{c.title || 'Complaint'}</p>
+                    <p className="text-sm text-muted-foreground">{c.location}</p>
+                  </div>
+                  <Badge variant={c.status === 'Solved' ? 'success' : 'warning'} className="ml-2">
+                    {c.status || 'Pending'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </AppLayout>
   )
 }
