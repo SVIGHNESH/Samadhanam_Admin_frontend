@@ -65,8 +65,11 @@ export default function LoginPage() {
                 Secure Civic Platform
               </div>
               <h1 className="mt-6 text-5xl font-bold leading-tight text-slate-900">
-                Better city response starts with better visibility.
+                SAMADHANAM
               </h1>
+              <h6 className="mt-6 text-4xl font-bold leading-tight text-slate-900">
+                Better city response starts with better visibility.
+              </h6>
               <p className="mt-4 max-w-md text-sm text-slate-600">
                 Monitor complaint flow, municipal performance, and critical escalations from one unified command center.
               </p>
