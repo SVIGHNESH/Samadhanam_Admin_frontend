@@ -176,8 +176,8 @@ export function AppLayout({ children, isStateAdmin = false }) {
     <div className="min-h-screen page-enter">
       <Sidebar isStateAdmin={isStateAdmin} />
       <div className="md:pl-72">
-        <header className="sticky top-0 z-20 border-b border-white/60 bg-white/70 backdrop-blur-md">
-          <div className="mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-20 px-3 pt-3">
+          <div className="mx-auto flex h-16 items-center justify-between rounded-2xl border border-white/60 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <MobileSidebar isStateAdmin={isStateAdmin} />
               <div>
@@ -190,7 +190,7 @@ export function AppLayout({ children, isStateAdmin = false }) {
             </div>
           </div>
         </header>
-        <main className="py-6 px-4 sm:px-6 lg:px-8">
+        <main className="py-6 px-3">
           {children}
         </main>
       </div>
