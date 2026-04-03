@@ -33,9 +33,11 @@ export function Sidebar({ isStateAdmin = false }) {
     navigate('/login')
   }
 
-  const filteredNav = isStateAdmin 
-    ? navigation 
-    : navigation.filter(item => item.name !== "Escalated")
+  const filteredNav = navigation.filter(item => {
+    if (item.name === "Escalated") return isStateAdmin;
+    if (item.name === "Municipalities") return isStateAdmin;
+    return true;
+  });
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-primary">
@@ -105,9 +107,11 @@ export function MobileSidebar({ isStateAdmin = false }) {
     setOpen(false)
   }
 
-  const filteredNav = isStateAdmin 
-    ? navigation 
-    : navigation.filter(item => item.name !== "Escalated")
+  const filteredNav = navigation.filter(item => {
+    if (item.name === "Escalated") return isStateAdmin;
+    if (item.name === "Municipalities") return isStateAdmin;
+    return true;
+  });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

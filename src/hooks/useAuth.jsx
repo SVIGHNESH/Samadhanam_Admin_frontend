@@ -53,8 +53,8 @@ export function AuthProvider({ children }) {
     setAuthError(null);
   };
 
-  // Check if user is state admin (has state_id and state_name)
-  const isStateAdmin = Boolean(user && user.state_id && user.state_name);
+  // Check if user is state admin (has state_id and state_name but NO district_name)
+  const isStateAdmin = Boolean(user && user.state_id && user.state_name && !user.district_name);
   
   // Check if user is municipality operator (has district_name)
   const isMunicipality = Boolean(user && user.district_name);
