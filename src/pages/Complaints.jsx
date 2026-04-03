@@ -121,7 +121,7 @@ export default function ComplaintsPage() {
     return (
       <AppLayout isStateAdmin={isStateAdmin}>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Complaints</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Complaints</h1>
         </div>
         <ErrorDisplay 
           message="Failed to load complaints" 
@@ -133,14 +133,14 @@ export default function ComplaintsPage() {
 
   return (
     <AppLayout isStateAdmin={isStateAdmin}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Complaints</h1>
-        <p className="text-muted-foreground">
+      <div className="mb-6 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
+        <h1 className="text-3xl font-bold text-slate-900">Complaints</h1>
+        <p className="mt-2 text-muted-foreground">
           {isStateAdmin ? 'View all complaints across municipalities' : 'Manage complaints for your municipality'}
         </p>
       </div>
 
-      <Card>
+      <Card className="glass-panel border-white/80">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <div className="relative flex-1 max-w-sm">

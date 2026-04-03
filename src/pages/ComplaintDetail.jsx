@@ -94,19 +94,19 @@ export default function ComplaintDetailPage() {
 
   return (
     <AppLayout isStateAdmin={isStateAdmin}>
-      <div className="mb-6">
+      <div className="mb-6 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{complaint.title}</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{complaint.title}</h1>
           {getStatusBadge(complaint.status)}
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="glass-panel border-white/80">
           <CardHeader>
             <CardTitle>Complaint Details</CardTitle>
           </CardHeader>
@@ -137,7 +137,7 @@ export default function ComplaintDetailPage() {
 
         <div className="space-y-6">
           {complaint.imageUrl && (
-            <Card>
+            <Card className="glass-panel border-white/80">
               <CardHeader>
                 <CardTitle>Complaint Image</CardTitle>
               </CardHeader>
@@ -152,7 +152,7 @@ export default function ComplaintDetailPage() {
           )}
 
           {complaint.evidenceUrl && (
-            <Card>
+            <Card className="glass-panel border-white/80">
               <CardHeader>
                 <CardTitle>Resolution Evidence</CardTitle>
               </CardHeader>
@@ -169,7 +169,7 @@ export default function ComplaintDetailPage() {
       </div>
 
       {!isStateAdmin && complaint.status !== 'Solved' && (
-        <Card className="mt-6">
+        <Card className="mt-6 glass-panel border-white/80">
           <CardHeader>
             <CardTitle>Actions</CardTitle>
           </CardHeader>

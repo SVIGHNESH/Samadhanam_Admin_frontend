@@ -87,7 +87,7 @@ export default function EscalatedPage() {
     return (
       <AppLayout isStateAdmin={isStateAdmin}>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <AlertTriangle className="h-6 w-6 text-red-500" />
             Escalated Complaints
           </h1>
@@ -108,14 +108,14 @@ export default function EscalatedPage() {
 
   return (
     <AppLayout isStateAdmin={isStateAdmin}>
-      <div className="mb-6">
+      <div className="mb-6 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
               <AlertTriangle className="h-6 w-6 text-red-500" />
               Escalated Complaints
             </h1>
-            <p className="text-muted-foreground">
+            <p className="mt-2 text-muted-foreground">
               Complaints that require immediate attention (pending for more than 7 days)
             </p>
           </div>
@@ -134,7 +134,7 @@ export default function EscalatedPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="glass-panel border-white/80">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <div className="relative flex-1 max-w-sm">

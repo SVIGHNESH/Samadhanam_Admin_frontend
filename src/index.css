@@ -1,29 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 204 40% 98%;
+    --foreground: 206 40% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 206 40% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 212 91% 41%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 212 91% 41%;
-    --radius: 0.5rem;
+    --popover-foreground: 206 40% 12%;
+    --primary: 188 78% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 194 38% 93%;
+    --secondary-foreground: 201 42% 20%;
+    --muted: 196 24% 94%;
+    --muted-foreground: 203 18% 38%;
+    --accent: 32 90% 90%;
+    --accent-foreground: 18 41% 25%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 199 24% 84%;
+    --input: 199 24% 84%;
+    --ring: 188 78% 34%;
+    --radius: 0.85rem;
   }
 }
 
@@ -31,7 +33,51 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
+    background-image:
+      radial-gradient(circle at 10% -10%, rgba(18, 170, 186, 0.16), transparent 45%),
+      radial-gradient(circle at 100% 0%, rgba(255, 177, 82, 0.2), transparent 40%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(241, 247, 250, 0.9) 100%);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .page-enter {
+    animation: page-enter 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-panel {
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

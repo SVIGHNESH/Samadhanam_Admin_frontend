@@ -5,10 +5,68 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import {
+  ResponsiveContainer,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  Cell,
+} from 'recharts'
 import { dashboardApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { AppLayout } from '@/components/layout/Layout'
-import { Search, MapPin, Loader2, Building2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Search, MapPin, Loader2, Building2, AlertCircle, RefreshCw, X } from 'lucide-react'
+
+const TIME_FILTERS = [
+  { key: 'week', label: 'Week', days: 7 },
+  { key: 'month', label: 'Month', days: 30 },
+  { key: 'quarter', label: '3 Months', days: 90 },
+  { key: 'year', label: 'Year', days: 365 },
+  { key: 'all', label: 'All Time', days: null },
+]
+
+const ESCALATION_DAYS = 7
+
+function getRangeStartDate(filterKey) {
+  const filter = TIME_FILTERS.find((item) => item.key === filterKey)
+  if (!filter || !filter.days) return null
+
+  const start = new Date()
+  start.setDate(start.getDate() - filter.days)
+  return start
+}
+
+function filterComplaintsByTime(complaints, filterKey) {
+  const rangeStart = getRangeStartDate(filterKey)
+  if (!rangeStart) return complaints
+
+  return complaints.filter((complaint) => {
+    if (!complaint.createdAt) return true
+    const complaintDate = new Date(complaint.createdAt)
+    return complaintDate >= rangeStart
+  })
+}
+
+function buildMunicipalityMetrics(complaints, filterKey) {
+  const filteredComplaints = filterComplaintsByTime(complaints, filterKey)
+  const total = filteredComplaints.length
+  const solved = filteredComplaints.filter((complaint) => complaint.status === 'Solved').length
+
+  const escalated = filteredComplaints.filter((complaint) => {
+    const status = (complaint.status || '').toLowerCase()
+    if (status === 'solved') return false
+    if (status === 'escalated') return true
+    if (!complaint.createdAt) return false
+
+    const ageMs = Date.now() - new Date(complaint.createdAt).getTime()
+    return ageMs > ESCALATION_DAYS * 24 * 60 * 60 * 1000
+  }).length
+
+  return { total, solved, escalated }
+}
 
 function ErrorDisplay({ message, onRetry }) {
   return (
@@ -31,6 +89,8 @@ export default function MunicipalitiesPage() {
   const { isStateAdmin, user } = useAuth()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedMunicipality, setSelectedMunicipality] = useState(null)
+  const [timeFilter, setTimeFilter] = useState('month')
 
   const { 
     data, 
@@ -55,10 +115,50 @@ export default function MunicipalitiesPage() {
   const municipalities = isStateAdmin ? (data || []) : []
   const complaints = !isStateAdmin ? (data || []) : []
 
+  const {
+    data: municipalityComplaints = [],
+    isLoading: isMunicipalityGraphLoading,
+    isError: isMunicipalityGraphError,
+    refetch: refetchMunicipalityGraph,
+  } = useQuery({
+    queryKey: ['municipality-complaints', selectedMunicipality?.district_name],
+    queryFn: async () => {
+      const res = await dashboardApi.getComplaintsByMunicipality(selectedMunicipality?.district_name)
+      return res.data?.complaints || []
+    },
+    enabled: isStateAdmin && !!selectedMunicipality,
+    retry: 2,
+    staleTime: 30000,
+  })
+
+  const municipalityMetrics = buildMunicipalityMetrics(municipalityComplaints, timeFilter)
+  const graphData = [
+    {
+      metric: 'Total Problems',
+      value: municipalityMetrics.total,
+      fill: '#0891b2',
+    },
+    {
+      metric: 'Solved Problems',
+      value: municipalityMetrics.solved,
+      fill: '#16a34a',
+    },
+    {
+      metric: 'Escalated Problems',
+      value: municipalityMetrics.escalated,
+      fill: '#ef4444',
+    },
+  ]
+
   const filteredMunicipalities = municipalities.filter(m => 
     m.district_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.state_name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const closeMunicipalityModal = () => {
+    setSelectedMunicipality(null)
+    setTimeFilter('month')
+  }
 
   if (isLoading) {
     return (
@@ -89,15 +189,15 @@ export default function MunicipalitiesPage() {
   if (!isStateAdmin) {
     return (
       <AppLayout isStateAdmin={false}>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-6 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
+          <h1 className="text-3xl font-bold text-slate-900">
             My Municipality - {user?.district_name}
           </h1>
-          <p className="text-muted-foreground">Manage complaints for your municipality</p>
+          <p className="mt-2 text-muted-foreground">Manage complaints for your municipality</p>
         </div>
         
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="glass-panel border-white/80">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -108,7 +208,7 @@ export default function MunicipalitiesPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-panel border-white/80">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -120,7 +220,7 @@ export default function MunicipalitiesPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-panel border-white/80">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -134,7 +234,7 @@ export default function MunicipalitiesPage() {
           </Card>
         </div>
 
-        <Card className="mt-6">
+        <Card className="mt-6 glass-panel border-white/80">
           <CardHeader>
             <CardTitle>Recent Complaints</CardTitle>
           </CardHeader>
@@ -164,9 +264,9 @@ export default function MunicipalitiesPage() {
 
   return (
     <AppLayout isStateAdmin={isStateAdmin}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Municipalities</h1>
-        <p className="text-muted-foreground">View all municipalities and their complaint statistics</p>
+      <div className="mb-6 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
+        <h1 className="text-3xl font-bold text-slate-900">Municipalities</h1>
+        <p className="mt-2 text-muted-foreground">View all municipalities and their complaint statistics</p>
       </div>
 
       <div className="mb-4">
@@ -185,8 +285,8 @@ export default function MunicipalitiesPage() {
         {filteredMunicipalities.map((municipality) => (
           <Card 
             key={municipality._id || municipality.district_id}
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => navigate(`/municipalities/${municipality.district_name}`)}
+            className="glass-panel border-white/80 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            onClick={() => setSelectedMunicipality(municipality)}
           >
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center">
@@ -217,6 +317,94 @@ export default function MunicipalitiesPage() {
           </Card>
         ))}
       </div>
+
+      {selectedMunicipality && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-4xl border-white/85 bg-white/95 shadow-2xl">
+            <CardHeader className="border-b border-border/60 pb-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="text-2xl text-slate-900">
+                    {selectedMunicipality.district_name} - Problems Overview
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    See total, solved, and escalated problems with time-based filtering
+                  </p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={closeMunicipalityModal}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6">
+              <div className="mb-5 flex flex-wrap gap-2">
+                {TIME_FILTERS.map((filter) => (
+                  <Button
+                    key={filter.key}
+                    size="sm"
+                    variant={timeFilter === filter.key ? 'default' : 'outline'}
+                    onClick={() => setTimeFilter(filter.key)}
+                  >
+                    {filter.label}
+                  </Button>
+                ))}
+              </div>
+
+              {isMunicipalityGraphLoading && (
+                <div className="flex h-72 items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              )}
+
+              {isMunicipalityGraphError && (
+                <ErrorDisplay
+                  message="Failed to load municipality chart data"
+                  onRetry={() => refetchMunicipalityGraph()}
+                />
+              )}
+
+              {!isMunicipalityGraphLoading && !isMunicipalityGraphError && (
+                <>
+                  <div className="h-72 w-full rounded-2xl border border-border/70 bg-white/75 p-3">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={graphData} margin={{ top: 12, right: 18, left: 0, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                        <XAxis dataKey="metric" tick={{ fontSize: 12 }} />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip
+                          formatter={(value) => [value, 'Problems']}
+                          contentStyle={{ borderRadius: '12px', borderColor: '#cbd5e1' }}
+                        />
+                        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                          {graphData.map((entry) => (
+                            <Cell key={entry.metric} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+                      <p className="text-xs uppercase tracking-wider text-cyan-700">Total Problems</p>
+                      <p className="mt-1 text-2xl font-bold text-cyan-900">{municipalityMetrics.total}</p>
+                    </div>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                      <p className="text-xs uppercase tracking-wider text-emerald-700">Solved Problems</p>
+                      <p className="mt-1 text-2xl font-bold text-emerald-900">{municipalityMetrics.solved}</p>
+                    </div>
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                      <p className="text-xs uppercase tracking-wider text-red-700">Escalated Problems</p>
+                      <p className="mt-1 text-2xl font-bold text-red-900">{municipalityMetrics.escalated}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </AppLayout>
   )
 }

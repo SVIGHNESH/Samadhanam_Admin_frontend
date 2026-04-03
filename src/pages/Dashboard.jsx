@@ -18,7 +18,7 @@ import {
 
 function StatsCard({ title, value, icon: Icon, color, trend }) {
   return (
-    <Card>
+    <Card className="glass-panel border-white/80 hover:-translate-y-0.5 transition-transform">
       <CardContent className="p-6">
         <div className="flex items-center justify-between space-x-4">
           <div>
@@ -43,7 +43,7 @@ function StatsCard({ title, value, icon: Icon, color, trend }) {
 function MunicipalStats({ municipalities }) {
   if (!municipalities || municipalities.length === 0) {
     return (
-      <Card className="mt-6">
+      <Card className="mt-6 glass-panel border-white/80">
         <CardHeader>
           <CardTitle>Municipalities Overview</CardTitle>
         </CardHeader>
@@ -55,7 +55,7 @@ function MunicipalStats({ municipalities }) {
   }
   
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 glass-panel border-white/80">
       <CardHeader>
         <CardTitle>Municipalities Overview</CardTitle>
       </CardHeader>
@@ -116,7 +116,7 @@ function MunicipalRecentComplaints({ municipalityName }) {
 
 function ErrorDisplay({ message, onRetry }) {
   return (
-    <Card className="border-red-200 bg-red-50">
+    <Card className="border-red-200 bg-red-50/80">
       <CardContent className="p-6 flex flex-col items-center justify-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
         <p className="text-red-600 font-medium mb-4">{message || 'Something went wrong'}</p>
@@ -216,13 +216,13 @@ export default function DashboardPage() {
 
   return (
     <AppLayout isStateAdmin={isStateAdmin}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-8 rounded-3xl border border-white/70 bg-white/65 p-6 shadow-sm backdrop-blur-sm">
+        <h1 className="text-3xl font-bold text-slate-900">
           {isStateAdmin 
             ? `State Dashboard - ${user?.state_name || 'Admin'}` : 
             `Municipality Dashboard - ${user?.district_name || 'Operator'}`}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="mt-2 text-muted-foreground">
           {isStateAdmin 
             ? 'Overview of all municipalities in your state' : 
             'Manage complaints for your municipality'}
@@ -261,7 +261,7 @@ export default function DashboardPage() {
       {isStateAdmin && <MunicipalStats municipalities={municipalities} />}
 
       {isMunicipality && recentComplaints.length > 0 && (
-        <Card className="mt-6">
+        <Card className="mt-6 glass-panel border-white/80">
           <CardHeader>
             <CardTitle>Recent Complaints</CardTitle>
           </CardHeader>
