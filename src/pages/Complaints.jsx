@@ -11,7 +11,7 @@ import {
 import { dashboardApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { AppLayout } from '@/components/layout/Layout'
-import { Search, Loader2, Eye, ImagePlus, AlertCircle, RefreshCw } from 'lucide-react'
+import { Search, Loader2, Eye, AlertCircle, RefreshCw } from 'lucide-react'
 
 function ErrorDisplay({ message, onRetry }) {
   return (
@@ -35,9 +35,6 @@ export default function ComplaintsPage() {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedComplaint, setSelectedComplaint] = useState(null)
-  const [showUploadModal, setShowUploadModal] = useState(false)
-  const [evidenceImage, setEvidenceImage] = useState(null)
 
   const { 
     data, 
@@ -77,24 +74,6 @@ export default function ComplaintsPage() {
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
     return matchesSearch && matchesStatus
   })
-
-  const handleUploadEvidence = async () => {
-    if (!selectedComplaint || !evidenceImage) return
-    
-    const formData = new FormData()
-    formData.append('evidence', evidenceImage)
-    formData.append('complaint_id', selectedComplaint._id)
-    
-    try {
-      await dashboardApi.uploadEvidence(formData)
-      setShowUploadModal(false)
-      setSelectedComplaint(null)
-      setEvidenceImage(null)
-      refetch()
-    } catch (error) {
-      console.error('Upload failed:', error)
-    }
-  }
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -205,27 +184,13 @@ export default function ComplaintsPage() {
                     <TableCell>{getStatusBadge(complaint.status)}</TableCell>
                     <TableCell>{complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => navigate(`/complaints/${complaint._id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {!isStateAdmin && complaint.status !== 'Solved' && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => {
-                              setSelectedComplaint(complaint)
-                              setShowUploadModal(true)
-                            }}
-                          >
-                            <ImagePlus className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => navigate(`/complaints/${complaint._id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -235,36 +200,6 @@ export default function ComplaintsPage() {
         </CardContent>
       </Card>
 
-      {showUploadModal && selectedComplaint && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
-            <CardHeader>
-              <CardTitle>Upload Resolution Evidence</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Upload a photo showing the resolved issue for complaint: {selectedComplaint.title}
-              </p>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setEvidenceImage(e.target.files?.[0])}
-              />
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => {
-                  setShowUploadModal(false)
-                  setSelectedComplaint(null)
-                }}>
-                  Cancel
-                </Button>
-                <Button onClick={handleUploadEvidence} disabled={!evidenceImage}>
-                  Upload
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </AppLayout>
   )
 }

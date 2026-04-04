@@ -16,6 +16,7 @@ import {
   Cell,
 } from 'recharts'
 import { dashboardApi } from '@/lib/api'
+import { summarizeComplaints } from '@/lib/complaintStats'
 import { useAuth } from '@/hooks/useAuth'
 import { AppLayout } from '@/components/layout/Layout'
 import { Search, MapPin, Loader2, Building2, AlertCircle, RefreshCw, X } from 'lucide-react'
@@ -98,11 +99,38 @@ export default function MunicipalitiesPage() {
     isError,
     refetch 
   } = useQuery({
-    queryKey: ['municipalities'],
+    queryKey: ['municipalities', isStateAdmin, user?.district_name],
     queryFn: async () => {
       if (isStateAdmin) {
         const res = await dashboardApi.getAllMunicipalities()
-        return res.data?.districts || []
+        const districts = res.data?.districts || []
+
+        const municipalitiesWithStats = await Promise.all(
+          districts.map(async (district) => {
+            try {
+              const complaintsRes = await dashboardApi.getComplaintsByMunicipality(district.district_name)
+              const complaints = complaintsRes.data?.complaints || []
+              const stats = summarizeComplaints(complaints)
+
+              return {
+                ...district,
+                pending: stats.pending,
+                solved: stats.solved,
+                total: stats.total,
+              }
+            } catch (error) {
+              console.error(`Failed to fetch complaints for ${district.district_name}:`, error)
+              return {
+                ...district,
+                pending: 0,
+                solved: 0,
+                total: 0,
+              }
+            }
+          })
+        )
+
+        return municipalitiesWithStats
       } else {
         const res = await dashboardApi.getComplaintsByMunicipality(user?.district_name)
         return res.data?.complaints || []
@@ -110,6 +138,8 @@ export default function MunicipalitiesPage() {
     },
     retry: 2,
     staleTime: 30000,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   const municipalities = isStateAdmin ? (data || []) : []
@@ -129,6 +159,8 @@ export default function MunicipalitiesPage() {
     enabled: isStateAdmin && !!selectedMunicipality,
     retry: 2,
     staleTime: 30000,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   const municipalityMetrics = buildMunicipalityMetrics(municipalityComplaints, timeFilter)
@@ -306,7 +338,7 @@ export default function MunicipalitiesPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="font-medium">{(municipality.pending || 0) + (municipality.solved || 0)}</span>
+                  <span className="font-medium">{municipality.total || ((municipality.pending || 0) + (municipality.solved || 0))}</span>
                 </div>
               </div>
             </CardContent>

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { dashboardApi } from '@/lib/api'
+import { summarizeComplaints } from '@/lib/complaintStats'
 import { useAuth } from '@/hooks/useAuth'
 import { AppLayout } from '@/components/layout/Layout'
 import { 
@@ -137,43 +138,85 @@ export default function DashboardPage() {
   const stateQuery = useQuery({
     queryKey: ['dashboard-state', user?.state_id],
     queryFn: async () => {
-      const [statsRes, municipalitiesRes, escalatedRes] = await Promise.all([
-        dashboardApi.getStats().catch((e) => {
-          console.error('Stats error:', e);
-          return { data: { success: false } };
-        }),
+      const [municipalitiesRes, escalatedRes] = await Promise.all([
         dashboardApi.getAllMunicipalities().catch((e) => {
-          console.error('Municipalities error:', e);
-          return { data: { success: false, districts: [] } };
+          console.error('Municipalities error:', e)
+          return { data: { success: false, districts: [] } }
         }),
         dashboardApi.getEscalatedComplaints().catch((e) => {
-          console.error('Escalated error:', e);
-          return { data: { complaints: [] } };
+          console.error('Escalated error:', e)
+          return { data: { complaints: [] } }
         })
       ])
+
+      const districts = municipalitiesRes.data?.districts || []
+      const municipalityStatsList = await Promise.all(
+        districts.map(async (district) => {
+          try {
+            const complaintsRes = await dashboardApi.getComplaintsByMunicipality(district.district_name)
+            const complaints = complaintsRes.data?.complaints || []
+            const stats = summarizeComplaints(complaints)
+
+            return {
+              ...district,
+              pending: stats.pending,
+              solved: stats.solved,
+              total: stats.total,
+            }
+          } catch (error) {
+            console.error(`Failed to fetch complaints for ${district.district_name}:`, error)
+            return {
+              ...district,
+              pending: 0,
+              solved: 0,
+              total: 0,
+            }
+          }
+        })
+      )
+
+      const totalPending = municipalityStatsList.reduce((sum, district) => sum + (district.pending || 0), 0)
+      const totalSolved = municipalityStatsList.reduce((sum, district) => sum + (district.solved || 0), 0)
+
       return {
-        stats: statsRes.data,
-        municipalities: municipalitiesRes.data?.districts || [],
+        stats: {
+          totalPending,
+          totalSolved,
+          pending: totalPending,
+          solved: totalSolved,
+          total: totalPending + totalSolved,
+        },
+        municipalities: municipalityStatsList,
         escalated: escalatedRes.data?.complaints || []
       }
     },
     enabled: isStateAdmin,
     retry: 2,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   const municipalQuery = useQuery({
     queryKey: ['dashboard-municipal', user?.district_name],
     queryFn: async () => {
-      const res = await dashboardApi.getMunicipalStats().catch((e) => {
-        console.error('Municipal stats error:', e);
-        return { data: { success: false } };
+      const res = await dashboardApi.getComplaintsByMunicipality(user?.district_name).catch((e) => {
+        console.error('Municipal complaints error:', e)
+        return { data: { complaints: [] } }
       })
-      return res.data
+      const complaints = res.data?.complaints || []
+      const stats = summarizeComplaints(complaints)
+
+      return {
+        stats,
+        recentComplaints: complaints,
+      }
     },
     enabled: isMunicipality,
     retry: 2,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   const isLoading = isStateAdmin ? stateQuery.isLoading : municipalQuery.isLoading
@@ -185,7 +228,7 @@ export default function DashboardPage() {
   const escalated = isStateAdmin ? stateQuery.data?.escalated || [] : []
   const recentComplaints = isMunicipality ? municipalQuery.data?.recentComplaints || [] : []
 
-  const totalComplaints = isMunicipality ? (stats?.total || 0) : ((stats?.totalSolved || 0) + (stats?.totalPending || 0))
+  const totalComplaints = isMunicipality ? (stats?.total || 0) : (stats?.total || ((stats?.totalSolved || 0) + (stats?.totalPending || 0)))
   const pendingComplaints = isMunicipality ? (stats?.pending || 0) : (stats?.totalPending || 0)
   const solvedComplaints = isMunicipality ? (stats?.solved || 0) : (stats?.totalSolved || 0)
 
